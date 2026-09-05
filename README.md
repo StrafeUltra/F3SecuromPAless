@@ -82,7 +82,7 @@ Game struct at `lParam`:
 +8  outSize     ← write size here
 ```
 
-Return `1`. Official emulator used `56957` (`0xDE7D`). This tool may report the full `fableaudioex.ini` size. The next `7` uses `outSize` as `length`.
+Return `1`. Official SecuROM used `56957` (`0xDE7D`). This tool may report the full `fableaudioex.ini` size. The next `7` uses `outSize` as `length`.
 
 ### 10 — span / lock
 
