@@ -30,6 +30,7 @@ namespace F3SPAless
 	std::vector<std::uint8_t> F3Ini;
 	std::uint8_t T2Data[256]{};
 
+	static bool ConsoleEnabled = false;
 
 	void Log(const char* fmt, ...);
 

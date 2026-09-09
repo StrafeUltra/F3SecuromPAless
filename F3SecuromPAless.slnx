@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="F3SecuromPAless/F3SecuromPAless.vcxproj" />
+  <Project Path="F3SecuromPAless/F3SecuromPAless.vcxproj" Id="f6b231f2-7405-485c-aec3-f5b4f5a4bed8" />
 </Solution>

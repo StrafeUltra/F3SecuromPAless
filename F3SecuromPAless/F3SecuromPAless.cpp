@@ -5,6 +5,9 @@ namespace F3SPAless
 {
     void Log(const char* fmt, ...)
     {
+        if (!ConsoleEnabled)
+            return;
+
         va_list ap;
         va_start(ap, fmt);
         std::vprintf(fmt, ap);
@@ -273,10 +276,20 @@ namespace F3SPAless
 
 }
 
-int main()
+BOOL WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR cmd, int argc)
 {
-    ::SetConsoleTitleA("F3SecuromPAless");
-    ::SetConsoleTextAttribute(::GetStdHandle(STD_OUTPUT_HANDLE), 11);
+    if (cmd && std::strstr(cmd, "--console"))
+    {
+        FILE* cons{};
+        ::AllocConsole();
+        freopen_s(&cons, "CONOUT$", "w", stdout);
+        freopen_s(&cons, "CONOUT$", "w", stderr);
+        freopen_s(&cons, "CONIN$", "r", stdin);
+        ::SetConsoleTitleA("F3SecuromPAless");
+        ::SetConsoleTextAttribute(::GetStdHandle(STD_OUTPUT_HANDLE), 11);
+        F3SPAless::ConsoleEnabled = true;
+    }
+
 
     F3SPAless::Log("WARNING DO NOT CLOSE THIS WHILE THE GAME IS RUNNING IF YOU DO SECUROM CHECKS WILL NOT PASS!\n");
 
@@ -375,17 +388,60 @@ int main()
     F3SPAless::Log("Child resumed waiting for IPC\n");
 
     MSG msg{};
-    while (::GetMessageA(&msg, nullptr, 0, 0) > 0)
+    bool running = true;
+    while (running)
     {
-        ::TranslateMessage(&msg);
-        ::DispatchMessageA(&msg);
-        if (::WaitForSingleObject(F3SPAless::ChildProc, 0) == WAIT_OBJECT_0)
+        const DWORD wr = ::MsgWaitForMultipleObjects(1, &F3SPAless::ChildProc, FALSE, INFINITE, QS_ALLINPUT);
+
+        if (wr == WAIT_OBJECT_0)
         {
             DWORD code = 0;
             ::GetExitCodeProcess(F3SPAless::ChildProc, &code);
             F3SPAless::Log("Child exited %lu\n", code);
-            break;
+            running = false;
         }
+        else if (wr == WAIT_OBJECT_0 + 1)
+        {
+            while (running && ::PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE))
+            {
+                if (msg.message == WM_QUIT)
+                    running = false;
+                else
+                {
+                    ::TranslateMessage(&msg);
+                    ::DispatchMessageA(&msg);
+                }
+            }
+        }
+        else
+            running = false;
+    }
+
+
+    if (F3SPAless::MapView)
+    {
+        ::UnmapViewOfFile(F3SPAless::MapView);
+        F3SPAless::MapView = nullptr;
+    }
+
+    if (F3SPAless::hMap)
+    {
+        ::CloseHandle(F3SPAless::hMap);
+        F3SPAless::hMap = nullptr;
+    }
+
+    if (F3SPAless::IPCHwnd)
+    {
+        ::DestroyWindow(F3SPAless::IPCHwnd);
+        F3SPAless::IPCHwnd = nullptr;
+    }
+
+    ::UnregisterClassA("F3SPAlessWnd", ::GetModuleHandleA(nullptr));
+    if (F3SPAless::ChildProc)
+    {
+        ::CloseHandle(F3SPAless::ChildProc);
+        F3SPAless::ChildProc = nullptr;
+        F3SPAless::ChildPID = 0;
     }
 
     return 0;
